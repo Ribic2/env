@@ -5,6 +5,7 @@ services:
       context: ./infrastructure/nginx-proxy
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./infrastructure/nginx-proxy/:/etc/nginx/conf.d/:z
     networks:
@@ -220,7 +221,7 @@ services:
         - API_KEY=${API_KEY:-invalid}
         - API_KEY_READ_ONLY=${API_KEY_READ_ONLY:-invalid}
         - API_ALLOW_FROM=${API_ALLOW_FROM:-invalid}
-        - COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME:-mailcow-dockerized}
+        - COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME:-mailcow}
         - SKIP_FTS=${SKIP_FTS:-y}
         - SKIP_CLAMD=${SKIP_CLAMD:-n}
         - SKIP_SOGO=${SKIP_SOGO:-n}
@@ -341,7 +342,7 @@ services:
         - REDIS_SLAVEOF_IP=${REDIS_SLAVEOF_IP:-}
         - REDIS_SLAVEOF_PORT=${REDIS_SLAVEOF_PORT:-}
         - REDISPASS=${REDISPASS}
-        - COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME:-mailcow-dockerized}
+        - COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME:-mailcow}
       ports:
         - "${DOVEADM_PORT:-127.0.0.1:19991}:12345"
         - "${IMAP_PORT:-143}:143"
@@ -430,6 +431,7 @@ services:
           aliases:
             - memcached
   nginx-mailcow:
+      container_name: nginx-mailcow
       depends_on:
         - redis-mailcow
         - php-fpm-mailcow
@@ -439,8 +441,6 @@ services:
       dns:
         - ${IPV4_NETWORK:-172.22.1}.254
       environment:
-        - HTTPS_PORT=${HTTPS_PORT:-443}
-        - HTTP_PORT=${HTTP_PORT:-80}
         - MAILCOW_HOSTNAME=${MAILCOW_HOSTNAME}
         - ADDITIONAL_SERVER_NAMES=${ADDITIONAL_SERVER_NAMES:-}
         - TZ=${TZ}
@@ -471,6 +471,7 @@ services:
         - "${HTTP_BIND:-}:${HTTP_PORT:-80}:${HTTP_PORT:-80}"
       restart: always
       networks:
+        shared_net:
         mailcow-network:
           aliases:
             - nginx
@@ -493,7 +494,7 @@ services:
         - DBUSER=${DBUSER}
         - DBPASS=${DBPASS}
         - SKIP_LETS_ENCRYPT=${SKIP_LETS_ENCRYPT:-n}
-        - COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME:-mailcow-dockerized}
+        - COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME:-mailcow}
         - DIRECTORY_URL=${DIRECTORY_URL:-}
         - ENABLE_SSL_SNI=${ENABLE_SSL_SNI:-n}
         - SKIP_IP_CHECK=${SKIP_IP_CHECK:-n}
@@ -572,7 +573,7 @@ services:
         - WATCHDOG_MYSQL_REPLICATION_CHECKS=${WATCHDOG_MYSQL_REPLICATION_CHECKS:-n}
         - WATCHDOG_VERBOSE=${WATCHDOG_VERBOSE:-n}
         - MAILCOW_HOSTNAME=${MAILCOW_HOSTNAME}
-        - COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME:-mailcow-dockerized}
+        - COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME:-mailcow}
         - IPV4_NETWORK=${IPV4_NETWORK:-172.22.1}
         - IP_BY_DOCKER_API=${IP_BY_DOCKER_API:-0}
         - CHECK_UNBOUND=${CHECK_UNBOUND:-1}
@@ -694,15 +695,16 @@ services:
     image: bitnami/discourse:latest
     environment:
       DISCOURSE_USERNAME: admin
-      DISCOURSE_PASSWORD: admin123
+      DISCOURSE_PASSWORD: admin123456
       DISCOURSE_EMAIL: admin@example.com
       DISCOURSE_SITE_NAME: "My Forum"
       DISCOURSE_HOST: forum.example.com
       DISCOURSE_DATABASE_HOST: discourse-db
-      DISCOURSE_DATABASE_USER: bn_discourse
-      DISCOURSE_DATABASE_NAME: bitnami_application
+      DISCOURSE_DATABASE_USER: discourse
+      DISCOURSE_DATABASE_NAME: discourse
       DISCOURSE_DATABASE_PASSWORD: discoursepass
       DISCOURSE_REDIS_HOST: redis-mailcow
+      ALLOW_EMPTY_PASSWORD: yes
     ports:
       - "3000:3000"
     depends_on:
@@ -710,6 +712,7 @@ services:
       - redis-mailcow
     networks:
       - shared_net
+      - mailcow-network
   discourse-db:
     image: postgres:13
     container_name: discourse-db
