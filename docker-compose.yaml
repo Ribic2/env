@@ -17,8 +17,9 @@ services:
     command: start-dev
     environment:
       KC_DB: dev-mem
-      KC_HOSTNAME: "http://auth.example.com"
+      KC_HOSTNAME: auth.example.com
       KC_PROXY: edge
+      KC_HTTP_ENABLED: true
       KEYCLOAK_USER: admin
       KEYCLOAK_PASSWORD: admin
       KEYCLOAK_ADMIN: admin
