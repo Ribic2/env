@@ -17,7 +17,7 @@ services:
     command: start-dev
     environment:
       KC_DB: dev-mem
-      KC_HOSTNAME: auth.example.com
+      KC_HOSTNAME: http://auth.example.com
       KC_PROXY: edge
       KEYCLOAK_USER: admin
       KEYCLOAK_PASSWORD: admin
@@ -723,7 +723,6 @@ services:
     networks:
       - shared_net
       - mailcow-network
-
 volumes:
   nextcloud_data:
   nextcloud_db:
