@@ -1,0 +1,38 @@
+templates:
+  - "templates/postgres.template.yml"
+  - "templates/redis.template.yml"
+  - "templates/web.template.yml"
+  - "templates/web.ratelimited.template.yml"
+  # keep the default port 80 inside container
+  # comment out both SSL templates
+
+docker_args:                         # join compose network
+  - "--network=shared_net"
+  - "--network-alias=discourse"
+
+expose: []                           # expose nothing to host
+
+env:
+  DISCOURSE_HOSTNAME: forum.uwu-ype.eu
+  DISCOURSE_FORCE_HTTPS: "true"
+
+  # SMTP (use MailHog or real creds)
+  DISCOURSE_SMTP_ADDRESS: mailhog
+  DISCOURSE_DEVELOPER_EMAILS: admin@uwu-ype.eu
+  DISCOURSE_SMTP_PORT: 1025
+  DISCOURSE_SMTP_USER_NAME: ""
+  DISCOURSE_SMTP_PASSWORD: ""
+
+  # OIDC (Keycloak)
+  DISCOURSE_OPENID_CONNECT_ENABLED: "true"
+  DISCOURSE_OPENID_CONNECT_DISCOVERY_DOCUMENT: "https://auth.uwu-ype.eu/realms/forum/.well-known/openid-configuration"
+  DISCOURSE_OPENID_CONNECT_CLIENT_ID: "discourse"
+  DISCOURSE_OPENID_CONNECT_CLIENT_SECRET: "DEV-CLIENT-SECRET"
+  DISCOURSE_OPENID_CONNECT_AUTHORIZE_SCOPE: "openid email profile"
+
+hooks:
+  after_code:
+    - exec:
+        cd: $home/plugins
+        cmd:
+          - git clone https://github.com/discourse/discourse-openid-connect.git

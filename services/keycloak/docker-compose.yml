@@ -1,0 +1,59 @@
+services:
+  ype_keycloak_db:
+    image: bitnami/postgresql:latest
+    container_name: ype_keycloak_db
+    restart: always
+    environment:
+      - ALLOW_EMPTY_PASSWORD=no
+      - POSTGRESQL_DATABASE=${KEYCLOAK_DATABASE_NAME}
+      - POSTGRESQL_USERNAME=${KEYCLOAK_DATABASE_USER}
+      - POSTGRESQL_PASSWORD=${KEYCLOAK_DATABASE_PASSWORD}
+    volumes:
+      - keycloak_db_data:/bitnami/postgresql
+    networks:
+     - shared_net
+    healthcheck:
+      test: ["CMD","pg_isready","-U","bn_keycloak"]
+      interval: 10s
+      retries: 5
+
+
+  ype_keycloak:
+    image: bitnami/keycloak:latest
+    container_name: ype_keycloak
+    depends_on:
+      - ype_keycloak_db
+    environment:
+      ## database config (must match the postgres above!)
+      - KEYCLOAK_DATABASE_HOST=${KEYCLOAK_DATABASE_HOST}
+      - KEYCLOAK_DATABASE_NAME=${KEYCLOAK_DATABASE_NAME}
+      - KEYCLOAK_DATABASE_USER=${KEYCLOAK_DATABASE_USER}
+      - KEYCLOAK_DATABASE_PASSWORD=${KEYCLOAK_DATABASE_PASSWORD}
+
+      ## HTTP / proxy settings
+      - KC_PROXY=edge                           # trust the RP
+      - KC_HOSTNAME=https://auth.uwu-ype.eu     # full URL **with https**   (✓)
+      - KC_HOSTNAME_ADMIN=https://auth.uwu-ype.eu     # console URL (✓)
+      - KC_HOSTNAME_STRICT=true                 # never guess from Host hdr
+      - KC_HTTP_ENABLED=true                    # keep the plain‑HTTP listener on 8080 for Nginx
+
+      ## initial realm import (optional)
+      - KC_IMPORT=/opt/bitnami/keycloak/data/import/realm.json
+
+      ## admin user (only on first run)
+      - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
+      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
+      - KEYCLOAK_EXTRA_ARGS= --import-realm
+    volumes:
+      - ./services/keycloak/realms:/opt/bitnami/keycloak/data/import
+    networks:
+      shared_net:
+        aliases:
+          - keycloak
+
+volumes:
+  keycloak_db_data: {}
+
+networks:
+  shared_net:
+    external: true
